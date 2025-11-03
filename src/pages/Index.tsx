@@ -107,7 +107,7 @@ const Index = () => {
                     <Button size="lg" asChild className="shadow-lg">
                       <Link to="/browse">
                         <Search className="mr-2 h-5 w-5" />
-                        Browse Items
+                        Search
                       </Link>
                     </Button>
                     <Button size="lg" variant="outline" asChild>

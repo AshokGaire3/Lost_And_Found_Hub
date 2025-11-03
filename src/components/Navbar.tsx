@@ -50,24 +50,24 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-primary">
               <Link to="/browse">
                 <Search className="h-4 w-4 mr-2" />
-                Browse Items
+                Search
               </Link>
             </Button>
 
             {user ? (
               <>
                 {role === "staff" && (
-                  <Button variant="default" size="sm" asChild>
+                  <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-primary">
                     <Link to="/admin">
                       <LayoutDashboard className="h-4 w-4 mr-2" />
                       Staff Dashboard
                     </Link>
                   </Button>
                 )}
-                <Button variant={role === "staff" ? "outline" : "default"} size="sm" asChild>
+                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-primary">
                   <Link to="/report">
                     {role === "staff" ? "Report Found Item" : "Report Item"}
                   </Link>
@@ -120,10 +120,10 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Button variant="default" size="sm" asChild>
+                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-primary">
                   <Link to="/report">Report Lost Item</Link>
                 </Button>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-primary">
                   <Link to="/auth">Sign In</Link>
                 </Button>
               </>

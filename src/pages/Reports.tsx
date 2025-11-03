@@ -312,30 +312,30 @@ const Reports = () => {
         </div>
 
         {/* Claim Status Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Claim Status Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={[
-                    { status: "Approved", count: claimStats.approved },
-                    { status: "Pending", count: claimStats.pending },
-                    { status: "Rejected", count: claimStats.rejected },
-                  ]}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="status" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" fill="hsl(var(--accent))" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Claim Status Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={[
+                  { status: "Approved", count: claimStats.approved },
+                  { status: "Pending", count: claimStats.pending },
+                  { status: "Rejected", count: claimStats.rejected },
+                ]}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="status" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="hsl(var(--accent))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
         {/* Match Algorithm & Verification Stats */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
@@ -386,8 +386,8 @@ const Reports = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
-    );
-  };
-  
-  export default Reports;
+    </div>
+  );
+};
+
+export default Reports;

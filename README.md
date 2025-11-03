@@ -4,7 +4,7 @@ A modern, responsive web application for managing lost and found items on campus
 
 ## Project Repository
 
-**GitHub**: https://github.com/AshokGaire3/Lost-AnD-Found-Hub
+**GitHub**: https://github.com/AshokGaire3/Lost_And_Found_Hub
 
 ## Features
 
