@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#6366f1" opacity="0.1"/>
+  
+  <!-- Package Box Base -->
+  <rect x="25" y="35" width="50" height="45" fill="url(#boxGrad)" rx="4"/>
+  
+  <!-- Box Top/Lid -->
+  <path d="M 25 35 L 50 20 L 75 35 Z" fill="#4f46e5"/>
+  
+  <!-- Front Face -->
+  <path d="M 50 35 L 75 35 L 75 80 L 50 80 Z" fill="#818cf8"/>
+  
+  <!-- Search Circle -->
+  <circle cx="65" cy="55" r="12" fill="none" stroke="white" stroke-width="4" opacity="0.95"/>
+  <!-- Search Handle -->
+  <line x1="72" y1="62" x2="82" y2="72" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.95"/>
+  
+  <!-- Decorative Dot on Box -->
+  <circle cx="40" cy="60" r="3" fill="white" opacity="0.9"/>
+</svg>
