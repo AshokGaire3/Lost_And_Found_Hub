@@ -105,24 +105,29 @@ This project is built with:
 
 ## Project Structure
 
+The project is organized into three main directories:
+
 ```
 lost-and-found-hub/
-├── src/
-│   ├── pages/          # Main application pages
-│   │   ├── Index.tsx   # Homepage
-│   │   ├── Browse.tsx  # Browse found items
-│   │   ├── ReportItem.tsx # Report lost/found items (survey flow)
-│   │   ├── MyItems.tsx # User's lost/found items
-│   │   ├── ItemDetail.tsx # Item details & claiming
-│   │   ├── AdminDashboard.tsx # Staff dashboard
-│   │   └── StorageManagement.tsx # Storage tracking
-│   ├── components/     # Reusable components
-│   ├── integrations/   # Supabase client & types
-│   └── hooks/          # Custom React hooks
-├── supabase/
-│   └── migrations/     # Database migrations & sample data
-└── public/             # Static assets
+├── frontend/            # React frontend application
+│   ├── src/
+│   │   ├── pages/      # Main application pages
+│   │   ├── components/ # Reusable components
+│   │   ├── hooks/      # Custom React hooks
+│   │   ├── lib/        # Utility functions
+│   │   └── integrations/ # Supabase client & types
+│   ├── public/         # Static assets
+│   └── [config files]  # Vite, Tailwind, TypeScript configs
+│
+├── backend/             # Backend services and API
+│   └── supabase/        # Supabase client configuration
+│
+└── database/            # Database schema and migrations
+    ├── migrations/      # SQL migration files
+    └── [schema files]   # Complete schema and config
 ```
+
+See [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for detailed structure documentation.
 
 ## Deployment
 
