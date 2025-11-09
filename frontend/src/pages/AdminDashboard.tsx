@@ -1,31 +1,35 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserRole } from "@/hooks/useUserRole";
-import StatsCards from "@/components/admin/StatsCards";
-import MatchReview from "@/components/admin/MatchReview";
-import ClaimDetailsDialog from "@/components/admin/ClaimDetailsDialog";
 import { toast } from "sonner";
-import { Package, Search, BarChart, Database, Plus, Eye, FileText } from "lucide-react";
+import { Package, Search, Plus, RefreshCw, ChevronDown, Eye } from "lucide-react";
 import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Item {
   id: string;
   title: string;
+  description: string;
   category: string;
   status: string;
   location: string;
   venue: string | null;
+  container: string | null;
   date_lost_found: string;
   created_at: string;
+  expiry_date: string | null;
 }
 
 interface Claim {
@@ -36,28 +40,33 @@ interface Claim {
   phone: string | null;
   email: string | null;
   message: string;
-  status: string;
-  created_at: string;
+  status: string | null;
+  created_at: string | null;
   reference_number: string | null;
-  claim_date: string | null;
-  verification_status: string | null;
-  staff_notes: string | null;
+  lost_date: string | null;
+  lost_location: string | null;
+  venue: string | null;
   items: {
     title: string;
     category: string;
-  };
+  } | null;
 }
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { role, loading: roleLoading } = useUserRole();
   const [items, setItems] = useState<Item[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pendingMatches, setPendingMatches] = useState(0);
-  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const getInitialTab = (): "items" | "claims" => {
+    const tabParam = searchParams.get("tab");
+    return (tabParam === "claims" || tabParam === "items") ? tabParam : "items";
+  };
+
+  const [activeTab, setActiveTab] = useState<"items" | "claims">(getInitialTab());
+  const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
     if (!roleLoading) {
@@ -67,17 +76,30 @@ const AdminDashboard = () => {
         return;
       }
       fetchData();
+      fetchUserEmail();
     }
   }, [roleLoading, role, navigate]);
+
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "claims" || tabParam === "items") {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  const fetchUserEmail = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserEmail(user?.email || "");
+  };
 
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      const [itemsRes, claimsRes, matchesRes] = await Promise.all([
+      const [itemsRes, claimsRes] = await Promise.all([
         supabase.from("items").select("*").eq("is_active", true).order("created_at", { ascending: false }),
-        supabase.from("claims").select("*, items(title, category)").order("created_at", { ascending: false }),
-        supabase.from("matches").select("id").eq("status", "pending")
+        supabase.from("claims").select("*, items(title, category)").order("created_at", { ascending: false })
       ]);
 
       if (itemsRes.error) throw itemsRes.error;
@@ -85,7 +107,6 @@ const AdminDashboard = () => {
 
       setItems(itemsRes.data || []);
       setClaims(claimsRes.data || []);
-      setPendingMatches(matchesRes.data?.length || 0);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load dashboard data");
@@ -94,56 +115,30 @@ const AdminDashboard = () => {
     }
   };
 
-  const updateClaimStatus = async (claimId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from("claims")
-        .update({ status: newStatus })
-        .eq("id", claimId);
-
-      if (error) throw error;
-      
-      toast.success(`Claim ${newStatus}`);
-      fetchData();
-    } catch (error) {
-      console.error("Error updating claim:", error);
-      toast.error("Failed to update claim");
-    }
-  };
-
-  const updateItemStatus = async (itemId: string, newStatus: "lost" | "found" | "claimed" | "returned") => {
-    try {
-      const { error } = await supabase
-        .from("items")
-        .update({ status: newStatus })
-        .eq("id", itemId);
-
-      if (error) throw error;
-      
-      toast.success(`Item status updated to ${newStatus}`);
-      fetchData();
-    } catch (error) {
-      console.error("Error updating item:", error);
-      toast.error("Failed to update item");
-    }
+  const calculateDaysUntilExpiry = (expiryDate: string | null) => {
+    if (!expiryDate) return "30";
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays.toString() : "0";
   };
 
   const filteredItems = items.filter((item) =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.location.toLowerCase().includes(searchTerm.toLowerCase())
+    item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.container?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredClaims = claims.filter((claim) =>
-    claim.items?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    claim.items?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    claim.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    claim.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     claim.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    claim.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    claim.message?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Get items from this week
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  const itemsThisWeek = items.filter(item => new Date(item.created_at) > oneWeekAgo).length;
 
   if (roleLoading || loading) {
     return (
@@ -158,289 +153,268 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background transition-opacity duration-150">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Staff Dashboard</h1>
-            <p className="text-muted-foreground">Manage lost and found items, claims, and storage</p>
-          </div>
-          <div className="flex gap-2">
-            <Button asChild>
-              <Link to="/report">
-                <Plus className="mr-2 h-4 w-4" />
-                Report Found Item
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/admin/storage">
-                <Database className="mr-2 h-4 w-4" />
-                Storage
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/admin/reports">
-                <BarChart className="mr-2 h-4 w-4" />
-                Reports
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Staff Info Banner */}
-        <div className="mb-8 bg-primary/10 border border-primary/20 rounded-lg p-6">
-          <div className="flex items-start gap-4">
-            <div className="bg-primary/20 p-3 rounded-lg">
-              <Package className="h-6 w-6 text-primary" />
+      {/* RepoApp-style Navigation Bar */}
+      <div className="border-b border-border bg-card">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => {
+                  setActiveTab("items");
+                  navigate("/admin?tab=items", { replace: true });
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  activeTab === "items"
+                    ? "bg-foreground text-background font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Package className="h-4 w-4" />
+                Items
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("claims");
+                  navigate("/admin?tab=claims", { replace: true });
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  activeTab === "claims"
+                    ? "bg-foreground text-background font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Eye className="h-4 w-4" />
+                Claims
+              </button>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg mb-2">Welcome, Staff Member!</h3>
-              <p className="text-muted-foreground mb-4">
-                You're logged in with <strong>Staff privileges</strong>. Here's what you can do:
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>✓ <strong>Report Found Items</strong> - Click "Report Found Item" to log items you've found on campus</li>
-                <li>✓ <strong>Manage Claims</strong> - Review and approve claims from students looking for their lost items</li>
-                <li>✓ <strong>Track Storage</strong> - Assign physical storage locations to found items</li>
-                <li>✓ <strong>Review Matches</strong> - AI-powered suggestions for matching lost and found items</li>
-                <li>✓ <strong>View All Items</strong> - Access complete database of all lost and found items</li>
-              </ul>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/admin/reports">Reports</Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                    {userEmail || "User"} <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="mb-8">
-          <StatsCards
-            totalItems={items.length}
-            pendingClaims={claims.filter(c => c.status === "pending").length}
-            pendingMatches={pendingMatches}
-            itemsThisWeek={itemsThisWeek}
-          />
+      <div className="container mx-auto px-4 py-6">
+        {/* Header Section */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-foreground">
+              {activeTab === "items" ? "Items" : "Claims"}
+            </h1>
+            <Badge variant="outline" className="text-sm">
+              {activeTab === "items" ? filteredItems.length : filteredClaims.length}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            {activeTab === "items" && (
+              <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
+                <Link to="/report">
+                  Add item <span className="ml-1">&gt;&gt;</span>
+                </Link>
+              </Button>
+            )}
+            {activeTab === "claims" && (
+              <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
+                <Link to="/admin/claims/add">
+                  Add Claim <span className="ml-1">&gt;&gt;</span>
+                </Link>
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <RefreshCw className="h-4 w-4" />
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={fetchData}>Refresh</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
-        {/* Match Review */}
-        {pendingMatches > 0 && (
-          <div className="mb-8">
-            <MatchReview />
+        {/* Search Section */}
+        <div className="mb-6 flex items-center gap-2">
+          <div className="flex-1 relative">
+            <Input
+              placeholder="Keyword(s)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <Button variant="outline" size="icon">
+            <Search className="h-4 w-4" />
+          </Button>
+          <Button variant="outline">Advanced Search</Button>
+        </div>
+
+        {/* Items Table */}
+        {activeTab === "items" && (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-secondary">
+                  <TableHead className="font-semibold">Item ID</TableHead>
+                  <TableHead className="font-semibold">Item Title</TableHead>
+                  <TableHead className="font-semibold">Description</TableHead>
+                  <TableHead className="font-semibold">After Expire</TableHead>
+                  <TableHead className="font-semibold">Container</TableHead>
+                  <TableHead className="font-semibold">Venue</TableHead>
+                  <TableHead className="font-semibold">Category</TableHead>
+                  <TableHead className="font-semibold">Found Loc</TableHead>
+                  <TableHead className="font-semibold">Date Found</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      No items found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredItems.map((item) => (
+                    <TableRow key={item.id} className="hover:bg-secondary/50">
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-nku-gold hover:text-nku-gold font-mono text-sm"
+                          onClick={() => navigate(`/item/${item.id}`)}
+                        >
+                          {item.id.substring(0, 6)}
+                          <ChevronDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-medium">{item.title || "Untitled"}</TableCell>
+                      <TableCell className="max-w-md">
+                        <p className="truncate text-sm text-muted-foreground">
+                          {item.description}
+                        </p>
+                      </TableCell>
+                      <TableCell>{calculateDaysUntilExpiry(item.expiry_date)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {item.container || "N/A"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {item.venue || "N/A"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {item.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {item.location}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(item.date_lost_found), "yyyy-MM-dd")}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         )}
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search items and claims..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        {/* Claims Table */}
+        {activeTab === "claims" && (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-secondary">
+                  <TableHead className="font-semibold">Claim ID</TableHead>
+                  <TableHead className="font-semibold">First Name</TableHead>
+                  <TableHead className="font-semibold">Last Name</TableHead>
+                  <TableHead className="font-semibold">Description</TableHead>
+                  <TableHead className="font-semibold">Lost Date</TableHead>
+                  <TableHead className="font-semibold">Lost Location</TableHead>
+                  <TableHead className="font-semibold">Venue</TableHead>
+                  <TableHead className="font-semibold">Phone</TableHead>
+                  <TableHead className="font-semibold">Reference Number</TableHead>
+                  <TableHead className="font-semibold">Created At</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClaims.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                      No claims found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredClaims.map((claim) => (
+                    <TableRow key={claim.id} className="hover:bg-secondary/50">
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-nku-gold hover:text-nku-gold font-mono text-sm"
+                          onClick={() => navigate(`/admin/claims/${claim.id}`)}
+                        >
+                          {claim.id.substring(0, 6)}
+                          <ChevronDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-medium">{claim.first_name || "N/A"}</TableCell>
+                      <TableCell className="font-medium">{claim.last_name || "N/A"}</TableCell>
+                      <TableCell className="max-w-md">
+                        <p className="truncate text-sm text-muted-foreground">
+                          {claim.message || claim.items?.title || "N/A"}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {claim.lost_date ? format(new Date(claim.lost_date), "yyyy-MM-dd") : "N/A"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {claim.lost_location || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {claim.venue || "N/A"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {claim.phone || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-mono">
+                        {claim.reference_number || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {claim.created_at ? format(new Date(claim.created_at), "yyyy-MM-dd") : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="items" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-            <TabsTrigger value="items">
-              <Package className="mr-2 h-4 w-4" />
-              Items
-            </TabsTrigger>
-            <TabsTrigger value="claims">
-              <Eye className="mr-2 h-4 w-4" />
-              Claims
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Items Tab */}
-          <TabsContent value="items">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Items</CardTitle>
-                <CardDescription>
-                  Manage items reported as lost or found
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredItems.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                          No items found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredItems.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.title}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{item.category}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                item.status === "found"
-                                  ? "default"
-                                  : item.status === "lost"
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {item.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{item.venue || item.location}</TableCell>
-                          <TableCell>
-                            {format(new Date(item.date_lost_found), "MMM d, yyyy")}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/item/${item.id}`)}
-                              >
-                                View
-                              </Button>
-                              <select
-                                className="text-sm border rounded px-2 py-1"
-                                value={item.status}
-                                onChange={(e) =>
-                                  updateItemStatus(item.id, e.target.value as any)
-                                }
-                              >
-                                <option value="found">Found</option>
-                                <option value="lost">Lost</option>
-                                <option value="claimed">Claimed</option>
-                                <option value="returned">Returned</option>
-                              </select>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Claims Tab */}
-          <TabsContent value="claims">
-            <Card>
-              <CardHeader>
-                <CardTitle>Claims</CardTitle>
-                <CardDescription>
-                  Review and manage item claims
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Claimant</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredClaims.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">
-                          No claims found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredClaims.map((claim) => (
-                        <TableRow key={claim.id}>
-                          <TableCell className="font-mono text-sm">
-                            {claim.reference_number}
-                          </TableCell>
-                          <TableCell>{claim.items?.title}</TableCell>
-                          <TableCell>
-                            {claim.first_name && claim.last_name
-                              ? `${claim.first_name} ${claim.last_name}`
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {claim.email || claim.phone || "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                claim.status === "pending"
-                                  ? "secondary"
-                                  : claim.status === "approved"
-                                  ? "default"
-                                  : "destructive"
-                              }
-                            >
-                              {claim.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {format(new Date(claim.created_at), "MMM d, yyyy")}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedClaim(claim);
-                                  setClaimDialogOpen(true);
-                                }}
-                              >
-                                <FileText className="mr-1 h-3 w-3" />
-                                Details
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/item/${claim.item_id}`)}
-                              >
-                                View Item
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        )}
       </div>
-
-      {/* Claim Details Dialog */}
-      {selectedClaim && (
-        <ClaimDetailsDialog
-          open={claimDialogOpen}
-          onOpenChange={setClaimDialogOpen}
-          claim={selectedClaim}
-          onUpdate={fetchData}
-        />
-      )}
     </div>
   );
 };
