@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Loader2, Download, TrendingUp, Package, CheckCircle } from "lucide-react";
+import { Download, TrendingUp, Package, CheckCircle } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
@@ -18,6 +18,7 @@ const Reports = () => {
   const navigate = useNavigate();
   const { role, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [categoryData, setCategoryData] = useState<CategoryStats[]>([]);
   const [claimStats, setClaimStats] = useState({
     total: 0,
@@ -37,17 +38,6 @@ const Reports = () => {
     "hsl(var(--destructive))",
     "hsl(var(--secondary))",
   ];
-
-  useEffect(() => {
-    if (!roleLoading && role !== "staff") {
-      toast.error("Access denied. Staff only.");
-      navigate("/");
-      return;
-    }
-    if (role === "staff") {
-      fetchReportData();
-    }
-  }, [role, roleLoading, navigate]);
 
   const fetchReportData = async () => {
     try {
@@ -165,6 +155,25 @@ const Reports = () => {
     }
   };
 
+  // Verify authorization and fetch data in background
+  useEffect(() => {
+    if (!roleLoading) {
+      if (role === "staff") {
+        fetchReportData();
+        try {
+          sessionStorage.setItem("user_role", "staff");
+        } catch {}
+      } else if (role !== null && role !== "staff") {
+        // Not staff - redirect after allowing page structure to render
+        setRedirecting(true);
+        toast.error("Access denied. Staff only.");
+        setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 100);
+      }
+    }
+  }, [role, roleLoading, navigate]);
+
   const exportToCSV = () => {
     const csvContent = [
       ["Category", "Count"],
@@ -182,40 +191,58 @@ const Reports = () => {
     toast.success("Report exported");
   };
 
-  if (roleLoading || (role === "staff" && loading)) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex justify-center items-center h-[calc(100vh-4rem)]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
-
   const successRate =
     claimStats.total > 0 ? ((claimStats.approved / claimStats.total) * 100).toFixed(1) : 0;
+
+  // Always render page structure immediately - never return null
+  // This ensures React Router doesn't try to render another route
+  // On page reload, this component mounts immediately, preventing any flash
+  // Show loading skeleton only during data fetch or initial role check for non-staff
+  const showLoading = (roleLoading && role === null && !redirecting) || (role === "staff" && loading);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Reports & Analytics</h1>
-            <p className="text-muted-foreground">
-              Track performance and insights
-            </p>
+        {showLoading ? (
+          // Show loading state with exact same structure
+          <div className="space-y-8">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <div className="h-10 w-64 bg-secondary animate-pulse rounded mb-2" />
+                <div className="h-6 w-72 bg-secondary animate-pulse rounded" />
+              </div>
+              <div className="h-10 w-32 bg-secondary animate-pulse rounded" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-4 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-24 bg-secondary animate-pulse rounded" />
+              ))}
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 mb-8">
+              <div className="h-64 bg-secondary animate-pulse rounded" />
+              <div className="h-64 bg-secondary animate-pulse rounded" />
+            </div>
+            <div className="h-64 bg-secondary animate-pulse rounded" />
           </div>
-          <Button onClick={exportToCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
+        ) : (
+          // Show actual content
+          <div className="space-y-8">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-4xl font-bold mb-2">Reports & Analytics</h1>
+                <p className="text-muted-foreground">
+                  Track performance and insights
+                </p>
+              </div>
+              <Button onClick={exportToCSV}>
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
+            {/* Summary Cards */}
+            <div className="grid gap-4 md:grid-cols-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -259,10 +286,10 @@ const Reports = () => {
               <p className="text-xs text-muted-foreground">Awaiting review</p>
             </CardContent>
           </Card>
-        </div>
+            </div>
 
-        {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+            {/* Charts */}
+            <div className="grid gap-6 md:grid-cols-2 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Items by Category</CardTitle>
@@ -309,10 +336,10 @@ const Reports = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </div>
+            </div>
 
-        {/* Claim Status Breakdown */}
-        <Card>
+            {/* Claim Status Breakdown */}
+            <Card>
           <CardHeader>
             <CardTitle>Claim Status Breakdown</CardTitle>
           </CardHeader>
@@ -333,12 +360,11 @@ const Reports = () => {
                 <Bar dataKey="count" fill="hsl(var(--accent))" />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
 
-        {/* Match Algorithm & Verification Stats */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          {/* Match Algorithm & Verification Stats */}
+          <div className="grid gap-6 md:grid-cols-2 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Matches by Algorithm</CardTitle>
@@ -385,7 +411,10 @@ const Reports = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </div>
+          </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

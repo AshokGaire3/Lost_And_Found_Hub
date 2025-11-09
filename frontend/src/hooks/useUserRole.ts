@@ -14,6 +14,9 @@ export const useUserRole = () => {
       if (!user) {
         setRole(null);
         setLoading(false);
+        try {
+          sessionStorage.removeItem("user_role");
+        } catch {}
         return;
       }
 
@@ -26,8 +29,20 @@ export const useUserRole = () => {
       if (error) {
         console.error("Error fetching user role:", error);
         setRole(null);
+        try {
+          sessionStorage.removeItem("user_role");
+        } catch {}
       } else {
-        setRole(data?.role as UserRole);
+        const userRole = data?.role as UserRole;
+        setRole(userRole);
+        // Cache role for faster navigation between pages
+        try {
+          if (userRole) {
+            sessionStorage.setItem("user_role", userRole);
+          } else {
+            sessionStorage.removeItem("user_role");
+          }
+        } catch {}
       }
       
       setLoading(false);

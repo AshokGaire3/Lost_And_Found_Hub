@@ -13,6 +13,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import StorageManagement from "./pages/StorageManagement";
 import Reports from "./pages/Reports";
 import AuditLog from "./pages/AuditLog";
+import BulkRelease from "./pages/BulkRelease";
+import Features from "./pages/Features";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,18 +24,27 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
-          <Route path="/" element={<Index />} />
+          {/* Admin routes first to ensure proper matching */}
+          <Route path="/admin/bulk-release" element={<BulkRelease />} />
+          <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/audit" element={<AuditLog />} />
+          <Route path="/admin/storage" element={<StorageManagement />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          {/* Other routes */}
           <Route path="/auth" element={<Auth />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/report" element={<ReportItem />} />
           <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/my-items" element={<MyItems />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/storage" element={<StorageManagement />} />
-          <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/audit" element={<AuditLog />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
