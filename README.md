@@ -1,6 +1,15 @@
-# Lost and Found Hub
+# Lost and Found NKU
 
-A modern, responsive web application for managing lost and found items on campus. Built with React, TypeScript, Supabase, and shadcn-ui.
+Northern Kentucky University's official lost and found service. A modern, responsive web application for managing lost and found items on campus. Built with React, TypeScript, Supabase, and shadcn-ui, featuring NKU's official brand colors.
+
+## Brand Colors
+
+Based on NKU's actual website design:
+- **Primary**: Black (#000000) - Dominant color used throughout the interface
+- **Secondary**: White (#FFFFFF) - Background and card colors
+- **Accent**: Gold (#FFC72C) - Used sparingly as a minimal accent (e.g., in "NKU" branding, link hovers)
+
+The application follows NKU's website design pattern where black and white dominate the interface, with gold used minimally as an accent color - matching how NKU's official website actually uses these colors.
 
 ## Project Repository
 

@@ -8,125 +8,149 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* NKU Website Design - Primarily Black and White, Gold Used Sparingly */
+    /* Based on NKU's actual website: black and white dominate, gold is minimal accent */
+    
+    /* Background: Pure White */
     --background: 0 0% 100%;
-    --foreground: 215 25% 15%;
+    /* Foreground: Pure Black - primary text color */
+    --foreground: 0 0% 0%;
 
+    /* Cards: White with black text */
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 0 0% 0%;
 
+    /* Popovers: White with black text */
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 0 0% 0%;
 
-    --primary: 187 85% 43%;
+    /* Primary: Black - main UI color (buttons, links, etc.) */
+    --primary: 0 0% 0%;
+    /* White text on black buttons */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 187 85% 65%;
+    --primary-glow: 0 0% 10%;
 
-    --secondary: 215 20% 95%;
-    --secondary-foreground: 215 25% 15%;
+    /* Secondary: Light gray for subtle backgrounds */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 215 20% 96%;
-    --muted-foreground: 215 15% 50%;
+    /* Muted: Very light gray for subtle backgrounds */
+    --muted: 0 0% 97%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 32 95% 55%;
-    --accent-foreground: 0 0% 100%;
-    --accent-glow: 32 95% 70%;
+    /* Accent: Light gray for hover states - mostly black/white */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 0%;
+    --accent-glow: 0 0% 90%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 88%;
-    --input: 215 20% 88%;
-    --ring: 187 85% 43%;
+    /* Borders: Black/Dark gray for definition */
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    /* Ring/Focus: Subtle gray, gold only on special elements */
+    --ring: 0 0% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
-    --gradient-primary: linear-gradient(135deg, hsl(187 85% 43%), hsl(187 85% 65%));
-    --gradient-accent: linear-gradient(135deg, hsl(32 95% 55%), hsl(32 95% 70%));
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%), hsl(187 85% 98%));
+    /* Minimal gradients - mostly black and white */
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 10%));
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 96%), hsl(0 0% 90%));
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
     
-    --shadow-sm: 0 2px 8px hsl(215 25% 15% / 0.05);
-    --shadow-md: 0 4px 16px hsl(215 25% 15% / 0.08);
-    --shadow-lg: 0 8px 32px hsl(215 25% 15% / 0.12);
-    --shadow-glow: 0 0 40px hsl(187 85% 43% / 0.15);
+    /* Subtle black shadows */
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.08);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.12);
+    --shadow-glow: 0 0 40px hsl(0 0% 0% / 0.1);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar: White background with black text */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 0 0% 0%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 0 0% 50%;
+    
+    /* Gold accent - used sparingly (HSL 43, 100%, 59%) */
+    --nku-gold: 43 100% 59%;
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 0 0% 98%;
+    /* NKU Dark Mode - Black and White with minimal gold */
+    /* Pure Black background with white text */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 215 25% 12%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 215 25% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 187 85% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 187 85% 65%;
+    /* Primary: White on black */
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --primary-glow: 0 0% 90%;
 
-    --secondary: 215 25% 18%;
-    --secondary-foreground: 0 0% 98%;
+    /* Secondary: Dark gray */
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 25% 18%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
 
-    --accent: 32 95% 55%;
+    /* Accent: Dark gray for highlights */
+    --accent: 0 0% 15%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 32 95% 70%;
+    --accent-glow: 0 0% 25%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 0 0% 0%;
 
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 22%;
-    --input: 215 25% 22%;
-    --ring: 187 85% 50%;
+    /* Borders: Medium gray for visibility on black */
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 0 0% 60%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(187 85% 40%), hsl(187 85% 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(32 95% 50%), hsl(32 95% 65%));
-    --gradient-hero: linear-gradient(180deg, hsl(215 30% 8%), hsl(187 85% 12%));
+    /* Minimal gradients - black and white */
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 90%));
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 20%));
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 0%), hsl(0 0% 5%));
     
-    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.2);
-    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.4);
-    --shadow-glow: 0 0 40px hsl(187 85% 43% / 0.25);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Subtle shadows */
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px hsl(0 0% 0% / 0.3);
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 30%;
+    --sidebar-ring: 0 0% 60%;
+    
+    /* Gold accent - used sparingly */
+    --nku-gold: 43 100% 59%;
   }
 }
 
