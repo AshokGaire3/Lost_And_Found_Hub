@@ -130,9 +130,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <Package className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Lost & Found
+            <Package className="h-8 w-8 text-foreground" />
+            <span className="text-2xl font-bold text-foreground">
+              Lost and Found <span className="text-nku-gold">NKU</span>
             </span>
           </Link>
         </div>
