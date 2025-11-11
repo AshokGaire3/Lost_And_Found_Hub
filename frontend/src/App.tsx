@@ -16,6 +16,7 @@ import AuditLog from "./pages/AuditLog";
 import BulkRelease from "./pages/BulkRelease";
 import Features from "./pages/Features";
 import NotFound from "./pages/NotFound";
+import AddClaim from "./pages/AddClaim";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
       >
         <Routes>
           {/* Admin routes first to ensure proper matching */}
+          <Route path="/admin/claims/add" element={<AddClaim />} />
           <Route path="/admin/bulk-release" element={<BulkRelease />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/audit" element={<AuditLog />} />

@@ -24,6 +24,7 @@ interface SearchFiltersProps {
   onDateFromChange?: (value: string) => void;
   dateTo?: string;
   onDateToChange?: (value: string) => void;
+  showStatusFilter?: boolean;
 }
 
 const SearchFilters = ({
@@ -41,9 +42,10 @@ const SearchFilters = ({
   onDateFromChange,
   dateTo,
   onDateToChange,
+  showStatusFilter = false,
 }: SearchFiltersProps) => {
   return (
-    <div className="bg-card rounded-lg p-6 shadow-sm space-y-4">
+    <div className="bg-card rounded-lg p-6 shadow-sm space-y-4 border border-border">
       <div className="relative">
         <Label htmlFor="search" className="sr-only">
           Search items
@@ -51,7 +53,7 @@ const SearchFilters = ({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           id="search"
-          placeholder="Search by title or description..."
+          placeholder="Search by title, description, color, location, venue..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"
@@ -59,6 +61,24 @@ const SearchFilters = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {showStatusFilter && (
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={statusFilter} onValueChange={onStatusChange}>
+              <SelectTrigger id="status">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="lost">Lost</SelectItem>
+                <SelectItem value="found">Found</SelectItem>
+                <SelectItem value="claimed">Claimed</SelectItem>
+                <SelectItem value="returned">Returned</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select value={categoryFilter} onValueChange={onCategoryChange}>

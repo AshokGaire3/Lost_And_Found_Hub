@@ -31,6 +31,8 @@ const itemSchema = z.object({
   venue: z.string().max(100).optional(),
   container: z.string().max(100).optional(),
   identifyingDetails: z.string().max(500).optional(),
+  status: z.string().optional(),
+  expiryDate: z.string().optional(),
 });
 
 interface FormFieldsProps {
@@ -45,16 +47,39 @@ interface FormFieldsProps {
     venue: string;
     container: string;
     identifyingDetails: string;
+    status?: string;
+    expiryDate?: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   imageFile: File | null;
   imagePreview: string | null;
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isForLostItem?: boolean;
+  isStaff?: boolean;
 }
 
-const FormFields = ({ formData, setFormData, imageFile, imagePreview, handleImageChange, isForLostItem = false }: FormFieldsProps) => (
+const FormFields = ({ formData, setFormData, imageFile, imagePreview, handleImageChange, isForLostItem = false, isStaff = false }: FormFieldsProps) => (
   <div className="space-y-4">
+    {isStaff && (
+      <div className="space-y-2">
+        <Label htmlFor="status">Status *</Label>
+        <Select
+          value={formData.status || "found"}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+        >
+          <SelectTrigger id="status">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="found">Found</SelectItem>
+            <SelectItem value="lost">Lost</SelectItem>
+            <SelectItem value="claimed">Claimed</SelectItem>
+            <SelectItem value="returned">Returned</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    )}
+
     <div className="space-y-2">
       <Label htmlFor="title">Item Title *</Label>
       <Input
@@ -103,16 +128,33 @@ const FormFields = ({ formData, setFormData, imageFile, imagePreview, handleImag
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="date">Date *</Label>
+        <Label htmlFor="date">{isForLostItem ? "Lost Date" : "Date Found"} *</Label>
         <Input
           id="date"
           type="date"
           value={formData.dateLostFound}
           onChange={(e) => setFormData(prev => ({ ...prev, dateLostFound: e.target.value }))}
           required
+          max={new Date().toISOString().split('T')[0]}
         />
       </div>
     </div>
+
+    {isStaff && (
+      <div className="space-y-2">
+        <Label htmlFor="expiryDate">Expiry Date (After Expire)</Label>
+        <Input
+          id="expiryDate"
+          type="date"
+          value={formData.expiryDate || ""}
+          onChange={(e) => setFormData(prev => ({ ...prev, expiryDate: e.target.value }))}
+          min={formData.dateLostFound || new Date().toISOString().split('T')[0]}
+        />
+        <p className="text-xs text-muted-foreground">
+          Items will expire after this date. Default is 30 days from found date.
+        </p>
+      </div>
+    )}
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -127,23 +169,31 @@ const FormFields = ({ formData, setFormData, imageFile, imagePreview, handleImag
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="venue">Venue</Label>
+        <Label htmlFor="venue">Venue (Department/Location) {isStaff ? "*" : ""}</Label>
         <Select
           value={formData.venue}
           onValueChange={(value) => setFormData(prev => ({ ...prev, venue: value }))}
+          required={isStaff}
         >
           <SelectTrigger id="venue">
-            <SelectValue placeholder="Select venue" />
+            <SelectValue placeholder={isStaff ? "Select venue/department (required)" : "Select venue/department"} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="SU">Student Union (SU)</SelectItem>
+            <SelectItem value="UC">University Center (UC)</SelectItem>
             <SelectItem value="Library">Library</SelectItem>
             <SelectItem value="GF">Griffin Hall (GF)</SelectItem>
             <SelectItem value="LA">Landrum Academic Center (LA)</SelectItem>
             <SelectItem value="Parking">Parking Area</SelectItem>
+            <SelectItem value="Dining">Dining Services</SelectItem>
+            <SelectItem value="Recreation">Recreation Center</SelectItem>
+            <SelectItem value="Housing">Housing/Residence Hall</SelectItem>
             <SelectItem value="Other">Other</SelectItem>
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground">
+          Where the item is currently located or was found {isStaff ? "(Required for staff)" : ""}
+        </p>
       </div>
     </div>
 
@@ -159,13 +209,17 @@ const FormFields = ({ formData, setFormData, imageFile, imagePreview, handleImag
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="container">Storage Container</Label>
+        <Label htmlFor="container">Container *</Label>
         <Input
           id="container"
-          placeholder="e.g., Box A3, Shelf 2"
+          placeholder="e.g., Box A3, Shelf 2, Drawer 1"
           value={formData.container}
           onChange={(e) => setFormData(prev => ({ ...prev, container: e.target.value }))}
+          required={isStaff}
         />
+        <p className="text-xs text-muted-foreground">
+          Physical storage location within the venue
+        </p>
       </div>
     </div>
 
@@ -302,6 +356,8 @@ const ReportItem = () => {
     venue: "",
     container: "",
     identifyingDetails: "",
+    status: "found", // Default for staff
+    expiryDate: "", // For staff to set expiry
     // Anonymous fields
     anonymousEmail: "",
     anonymousPhone: "",
@@ -435,12 +491,24 @@ const ReportItem = () => {
   const handleSubmit = async (e: React.FormEvent, status: "lost" | "found") => {
     e.preventDefault();
 
-    // For staff reporting found items, require authentication
-    if (status === "found" && !user) {
-      toast.error("Please sign in as staff to report found items");
-      navigate("/auth");
-      return;
-    }
+      // For staff reporting found items, require authentication
+      if (status === "found" && !user) {
+        toast.error("Please sign in as staff to report found items");
+        navigate("/auth");
+        return;
+      }
+
+      // For staff, ensure required fields are present
+      if (user && role === "staff") {
+        if (!formData.venue) {
+          toast.error("Please select a venue/department");
+          return;
+        }
+        if (!formData.container) {
+          toast.error("Please enter a container location");
+          return;
+        }
+      }
 
     // For students reporting lost items, allow anonymous reporting
     const isAnonymousReport = status === "lost" && !user;
@@ -467,8 +535,21 @@ const ReportItem = () => {
         contactInfo = anonymousContact || null;
       }
 
+      // Calculate expiry date: 30 days from found date if not specified
+      let expiryDate = null;
+      if (status === "found" && formData.dateLostFound) {
+        if (formData.expiryDate) {
+          expiryDate = formData.expiryDate;
+        } else {
+          // Default to 30 days from found date
+          const foundDate = new Date(formData.dateLostFound);
+          foundDate.setDate(foundDate.getDate() + 30);
+          expiryDate = foundDate.toISOString().split('T')[0];
+        }
+      }
+
       const itemData: any = {
-        status,
+        status: isStaff && formData.status ? formData.status : status,
         title: validated.title,
         description: validated.description,
         category: validated.category as any,
@@ -480,6 +561,7 @@ const ReportItem = () => {
         venue: validated.venue || null,
         container: validated.container || null,
         identifying_details: validated.identifyingDetails || null,
+        expiry_date: expiryDate,
       };
 
       // Add user_id and is_anonymous based on authentication status
@@ -495,10 +577,16 @@ const ReportItem = () => {
 
       if (error) throw error;
 
-      toast.success(`Item reported as ${status}! ${isAnonymousReport ? "Staff will review your report." : ""}`);
+      toast.success(
+        user && role === "staff" 
+          ? "Item added successfully!" 
+          : `Item reported as ${status}! ${isAnonymousReport ? "Staff will review your report." : ""}`
+      );
       
-      // Navigate based on authentication
-      if (isAnonymousReport) {
+      // Navigate based on authentication and role
+      if (user && role === "staff") {
+        navigate("/admin?tab=items");
+      } else if (isAnonymousReport) {
         navigate("/browse");
       } else {
         navigate("/my-items");
@@ -841,12 +929,12 @@ const ReportItem = () => {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
-            {user ? (role === "staff" ? "Report Found Item" : "Report Lost Item") : "Report Your Lost Item"}
+            {user ? (role === "staff" ? "Add New Item" : "Report Lost Item") : "Report Your Lost Item"}
           </h1>
           <p className="text-muted-foreground">
             {user 
               ? (role === "staff" 
-                  ? "Log items you've found to help reunite them with their owners"
+                  ? "Add a new item to the system. Fill in all required fields matching the items table structure."
                   : "Report your lost item to help us find it")
               : "No login required! Submit your lost item report and we'll help you find it."}
           </p>
@@ -864,8 +952,9 @@ const ReportItem = () => {
         {user && role === "staff" && (
           <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
             <p className="text-sm text-muted-foreground">
-              <strong>Staff Member:</strong> As a staff member, you're reporting an item you've found. 
-              Be as detailed as possible to help students identify their lost belongings.
+              <strong>Staff Member:</strong> Add items with all required information: Status, Title, Description, 
+              Venue (SU, UC, Parking, etc.), Container, Category, Found Location, and Date Found. 
+              Expiry date defaults to 30 days from found date if not specified.
             </p>
           </div>
         )}
@@ -883,7 +972,7 @@ const ReportItem = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : user && role === "staff" ? (
-              <form onSubmit={(e) => handleSubmit(e, "found")} className="space-y-6 mt-4">
+              <form onSubmit={(e) => handleSubmit(e, formData.status as "lost" | "found" || "found")} className="space-y-6 mt-4">
                 <FormFields 
                   formData={formData}
                   setFormData={setFormData}
@@ -891,15 +980,16 @@ const ReportItem = () => {
                   imagePreview={imagePreview}
                   handleImageChange={handleImageChange}
                   isForLostItem={false}
+                  isStaff={true}
                 />
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Reporting...
+                      Adding Item...
                     </>
                   ) : (
-                    "Report Found Item"
+                    "Add Item"
                   )}
                 </Button>
               </form>
