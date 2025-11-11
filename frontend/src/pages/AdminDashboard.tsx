@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
-import { Package, Search, Plus, RefreshCw, ChevronDown, Eye } from "lucide-react";
+import { Package, Search, Plus, RefreshCw, ChevronDown, Eye, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   DropdownMenu,
@@ -30,6 +30,8 @@ interface Item {
   date_lost_found: string;
   created_at: string;
   expiry_date: string | null;
+  color: string | null;
+  image_url: string | null;
 }
 
 interface Claim {
@@ -116,12 +118,19 @@ const AdminDashboard = () => {
   };
 
   const calculateDaysUntilExpiry = (expiryDate: string | null) => {
-    if (!expiryDate) return "30";
+    if (!expiryDate) return { days: "30", label: "30 days", expired: false };
     const expiry = new Date(expiryDate);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays.toString() : "0";
+    const expired = diffDays < 0;
+    return {
+      days: diffDays > 0 ? diffDays.toString() : "0",
+      label: expired ? `Expired ${Math.abs(diffDays)} days ago` : `${diffDays} days`,
+      expired
+    };
   };
 
   const filteredItems = items.filter((item) =>
@@ -270,74 +279,157 @@ const AdminDashboard = () => {
         {/* Items Table */}
         {activeTab === "items" && (
           <div className="border border-border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary">
-                  <TableHead className="font-semibold">Item ID</TableHead>
-                  <TableHead className="font-semibold">Item Title</TableHead>
-                  <TableHead className="font-semibold">Description</TableHead>
-                  <TableHead className="font-semibold">After Expire</TableHead>
-                  <TableHead className="font-semibold">Container</TableHead>
-                  <TableHead className="font-semibold">Venue</TableHead>
-                  <TableHead className="font-semibold">Category</TableHead>
-                  <TableHead className="font-semibold">Found Loc</TableHead>
-                  <TableHead className="font-semibold">Date Found</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                      No items found
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary">
+                    <TableHead className="font-semibold whitespace-nowrap">Item ID</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Item Title</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Description</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Status</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">After Expire</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Container</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Venue</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Category</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Found Loc</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Date Found</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap text-center">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredItems.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-secondary/50">
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-nku-gold hover:text-nku-gold font-mono text-sm"
-                          onClick={() => navigate(`/item/${item.id}`)}
-                        >
-                          {item.id.substring(0, 6)}
-                          <ChevronDown className="ml-1 h-3 w-3" />
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.title || "Untitled"}</TableCell>
-                      <TableCell className="max-w-md">
-                        <p className="truncate text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
-                      </TableCell>
-                      <TableCell>{calculateDaysUntilExpiry(item.expiry_date)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {item.container || "N/A"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {item.venue || "N/A"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {item.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {item.location}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(item.date_lost_found), "yyyy-MM-dd")}
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                        No items found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredItems.map((item) => {
+                      const expiryInfo = calculateDaysUntilExpiry(item.expiry_date);
+                      return (
+                        <TableRow key={item.id} className="hover:bg-secondary/50">
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-nku-gold hover:text-nku-gold font-mono text-sm p-0 h-auto"
+                              onClick={() => navigate(`/item/${item.id}`)}
+                            >
+                              {item.id.substring(0, 8)}
+                              <ChevronDown className="ml-1 h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                          <TableCell className="font-medium max-w-[200px]">
+                            <p className="truncate" title={item.title || "Untitled"}>
+                              {item.title || "Untitled"}
+                            </p>
+                          </TableCell>
+                          <TableCell className="max-w-[300px]">
+                            <p className="truncate text-sm text-muted-foreground" title={item.description || ""}>
+                              {item.description || "No description"}
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${
+                                item.status === "found"
+                                  ? "bg-success/10 text-success border-success/20"
+                                  : item.status === "claimed"
+                                  ? "bg-warning/10 text-warning border-warning/20"
+                                  : item.status === "returned"
+                                  ? "bg-accent/10 text-accent border-accent/20"
+                                  : "bg-destructive/10 text-destructive border-destructive/20"
+                              }`}
+                            >
+                              {item.status?.toUpperCase() || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`text-sm font-medium ${
+                                expiryInfo.expired
+                                  ? "text-destructive"
+                                  : parseInt(expiryInfo.days) <= 7
+                                  ? "text-warning"
+                                  : "text-muted-foreground"
+                              }`}
+                              title={expiryInfo.label}
+                            >
+                              {expiryInfo.label}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {item.container || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {item.venue || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {item.category || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground max-w-[150px]">
+                            <p className="truncate" title={item.location || ""}>
+                              {item.location || "N/A"}
+                            </p>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            {format(new Date(item.date_lost_found), "yyyy-MM-dd")}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigate(`/item/${item.id}`)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/item/${item.id}?edit=true`)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit Item
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={async () => {
+                                    if (confirm("Are you sure you want to delete this item?")) {
+                                      try {
+                                        const { error } = await supabase
+                                          .from("items")
+                                          .update({ is_active: false })
+                                          .eq("id", item.id);
+                                        if (error) throw error;
+                                        toast.success("Item deleted successfully");
+                                        fetchData();
+                                      } catch (error) {
+                                        console.error("Error deleting item:", error);
+                                        toast.error("Failed to delete item");
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Item
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
 
