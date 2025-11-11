@@ -102,13 +102,16 @@ const Navbar = () => {
     };
   }, [location.pathname, location.search, pendingLocation]);
 
+  // Determine logo destination - staff goes to admin, others go to homepage
+  const logoDestination = showStaffNav ? "/admin?tab=items" : "/";
+
   return (
-    <nav className="border-b-2 border-foreground/20 bg-background backdrop-blur-sm sticky top-0 z-50 shadow-sm will-change-[transform]">
+    <nav className="border-b-2 border-background/20 bg-foreground backdrop-blur-sm sticky top-0 z-50 shadow-sm will-change-[transform]">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-foreground" />
-            <span className="text-xl font-bold text-foreground">
+          <Link to={logoDestination} className="flex items-center gap-2" onClick={() => showStaffNav && setPendingLocation("/admin?tab=items")}>
+            <Package className="h-6 w-6 text-background" />
+            <span className="text-xl font-bold text-background">
               Lost and Found <span className="text-nku-gold">NKU</span>
             </span>
           </Link>
@@ -122,8 +125,8 @@ const Navbar = () => {
                   onClick={() => setPendingLocation("/admin?tab=items")}
                   className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-md transition-all duration-75 ease-linear will-change-auto ${
                     activeStates.items
-                      ? "bg-foreground text-background hover:bg-foreground/90 shadow-sm" 
-                      : "text-foreground hover:text-nku-gold hover:bg-secondary/50"
+                      ? "bg-background text-foreground hover:bg-background/90 shadow-sm" 
+                      : "text-background hover:text-nku-gold hover:bg-background/10"
                   }`}
                   style={{ 
                     transitionProperty: 'background-color, color, box-shadow',
@@ -138,8 +141,8 @@ const Navbar = () => {
                   onClick={() => setPendingLocation("/admin?tab=claims")}
                   className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-md transition-all duration-75 ease-linear will-change-auto ${
                     activeStates.claims
-                      ? "bg-foreground text-background hover:bg-foreground/90 shadow-sm" 
-                      : "text-foreground hover:text-nku-gold hover:bg-secondary/50"
+                      ? "bg-background text-foreground hover:bg-background/90 shadow-sm" 
+                      : "text-background hover:text-nku-gold hover:bg-background/10"
                   }`}
                   style={{ 
                     transitionProperty: 'background-color, color, box-shadow',
@@ -154,8 +157,8 @@ const Navbar = () => {
                   onClick={() => setPendingLocation("/admin/bulk-release")}
                   className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-md transition-all duration-75 ease-linear will-change-auto ${
                     activeStates.bulkRelease
-                      ? "bg-foreground text-background hover:bg-foreground/90 shadow-sm" 
-                      : "text-foreground hover:text-nku-gold hover:bg-secondary/50"
+                      ? "bg-background text-foreground hover:bg-background/90 shadow-sm" 
+                      : "text-background hover:text-nku-gold hover:bg-background/10"
                   }`}
                   style={{ 
                     transitionProperty: 'background-color, color, box-shadow',
@@ -170,8 +173,8 @@ const Navbar = () => {
                   onClick={() => setPendingLocation("/admin/reports")}
                   className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-md transition-all duration-75 ease-linear will-change-auto ${
                     activeStates.reports
-                      ? "bg-foreground text-background hover:bg-foreground/90 shadow-sm" 
-                      : "text-foreground hover:text-nku-gold hover:bg-secondary/50"
+                      ? "bg-background text-foreground hover:bg-background/90 shadow-sm" 
+                      : "text-background hover:text-nku-gold hover:bg-background/10"
                   }`}
                   style={{ 
                     transitionProperty: 'background-color, color, box-shadow',
@@ -185,7 +188,7 @@ const Navbar = () => {
                 {/* Profile Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="text-background hover:bg-background/10 hover:text-background">
                       <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -218,19 +221,19 @@ const Navbar = () => {
             ) : user ? (
               <>
                 {/* Non-staff user navigation */}
-                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-nku-gold transition-colors">
+                <Button variant="link" size="sm" asChild className="text-background font-semibold hover:text-nku-gold transition-colors">
                   <Link to="/browse">
                     <Search className="h-4 w-4 mr-2" />
                     Search
                   </Link>
                 </Button>
-                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-nku-gold transition-colors">
+                <Button variant="link" size="sm" asChild className="text-background font-semibold hover:text-nku-gold transition-colors">
                   <Link to="/report">Report Item</Link>
                 </Button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="text-background hover:bg-background/10 hover:text-background">
                       <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -248,16 +251,16 @@ const Navbar = () => {
             ) : (
               <>
                 {/* Guest navigation */}
-                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-nku-gold transition-colors">
+                <Button variant="link" size="sm" asChild className="text-background font-semibold hover:text-nku-gold transition-colors">
                   <Link to="/browse">
                     <Search className="h-4 w-4 mr-2" />
                     Search
                   </Link>
                 </Button>
-                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-nku-gold transition-colors">
+                <Button variant="link" size="sm" asChild className="text-background font-semibold hover:text-nku-gold transition-colors">
                   <Link to="/report">Report Lost Item</Link>
                 </Button>
-                <Button variant="link" size="sm" asChild className="text-foreground font-semibold hover:text-nku-gold transition-colors">
+                <Button variant="link" size="sm" asChild className="text-background font-semibold hover:text-nku-gold transition-colors">
                   <Link to="/auth">Sign In</Link>
                 </Button>
               </>
